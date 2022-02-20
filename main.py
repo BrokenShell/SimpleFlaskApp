@@ -1,22 +1,38 @@
-from flask import Flask, render_template
+import random
+
+import pandas as pd
+from flask import Flask, render_template, request
 
 APP = Flask(__name__)
 
 
 @APP.route('/')
 def home():
-    return render_template("home.html", disabled=True)
+    random_value = random.randint(1, 20)
+    return render_template("home.html", random_value=random_value)
 
 
 @APP.route("/about")
 def about():
-    return render_template("about.html", disabled=True)
+    table = pd.read_csv("data.csv", index_col="id").to_html(index=False)
+    return render_template("about.html", table=table)
 
 
-@APP.route("/contact")
+@APP.route("/contact", methods=["GET", "POST"])
 def contact():
-    return render_template("contact.html", disabled=True)
+    if request.method == "POST":
+        df = pd.read_csv("data.csv", index_col="id")
+        df.loc[len(df.index)] = [
+            request.values.get("Name"),
+            request.values.get("Email"),
+            request.values.get("Favorite"),
+            request.values.get("Message") or " ",
+            request.values.get("Surf", False),
+            request.values.get("Permission", False),
+        ]
+        df.to_csv("data.csv")
+    return render_template("contact.html")
 
 
 if __name__ == '__main__':
-    APP.run(debug=True)
+    APP.run()
